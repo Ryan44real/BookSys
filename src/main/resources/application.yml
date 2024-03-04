@@ -4,3 +4,10 @@ server:
     context-path: /
   tomcat:
     uri-encoding: UTF-8
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    username: root
+    password:
+    type:
