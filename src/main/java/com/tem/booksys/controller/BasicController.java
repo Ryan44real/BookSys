@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.tem.booksys.demos.web;
+package com.tem.booksys.controller;
 
+import com.tem.booksys.demos.web.User;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
