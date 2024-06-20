@@ -1,0 +1,32 @@
+<!--suppress ALL-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tem.booksys.mapper.BookMapper">
+    <insert id="add">
+        insert into article(title, content, cover_img, state, category_id, create_user, create_time, update_time,location,bookNum,publisher,ISBN,isbnPhoto)
+        VALUES (#{title},#{content},#{coverImg},#{state},#{categoryId},#{createUser},#{createTime},#{updateTime},#{location},#{bookNum},#{publisher},#{isbn},#{isbnPhoto})
+    </insert>
+
+    <select id="list" resultType="com.tem.booksys.entiy.Article">
+        select * from article
+        <where>
+            <if test="categoryId!=null">
+                category_id = #{categoryId}
+            </if>
+            <if test="state!=null">
+                and state=#{state}
+            </if>
+            <if test="title!=null">
+                and title=#{title}
+            </if>
+        </where>
+    </select>
+
+    <update id="update" parameterType="com.tem.booksys.entiy.Article">
+        update article set title=#{title},content=#{content},cover_img=#{coverImg},state=#{state},category_id=#{categoryId} where bookNum=#{bookNum}
+
+    </update>
+
+    <update id="updateOne">
+        update article set state=#{state} where bookNum=#{id}
+    </update>
+</mapper>

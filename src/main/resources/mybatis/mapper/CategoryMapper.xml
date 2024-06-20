@@ -1,0 +1,23 @@
+<!--suppress ALL-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tem.booksys.mapper.CategoryMapper">
+    <insert id="add">
+        insert into category(category_name, category_alias, create_user, create_time, update_time) VALUES (#{categoryName},#{categoryAlias},#{createUser},#{createTime},#{updateTime})
+    </insert>
+
+    <select id="list">
+        select * from category
+    </select>
+
+    <select id="findById">
+        select * from category where id=#{id}
+    </select>
+
+    <update id="update">
+        update category set category_name=#{categoryName},category_alias=#{categoryAlias},update_time=#{updateTime} where id=#{id}
+    </update>
+
+    <delete id="delete">
+        delete from category where id=#{id}
+    </delete>
+</mapper>

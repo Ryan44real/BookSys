@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--suppress ALL-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tem.booksys.mapper.BorrowMapper">
+        <resultMap id="BorrowRecordResult" type="com.tem.booksys.entiy.BorrowRecord">
+            <result property="id" column="id"></result>
+            <result property="borrowDate" column="borrowDate"></result>
+            <result property="deadline" column="deadline"></result>
+            <result property="borrowState" column="borrowState"></result>
+            <result property="userId" column="userId"></result>
+            <result property="bookId" column="bookId"></result>
+        </resultMap>
+        <insert id="borrowBook">
+            insert into borrow_record(borrowDate, deadline, borrowState, userId, bookNum) VALUES (now(),#{deadline},1,#{userId},#{bookId})
+        </insert>
+
+        <select id="findOverdueOrMax" resultMap="BorrowRecordResult">
+            SELECT * FROM borrow_record where borrowState !=2 and userid = #{userid}
+        </select>
+
+        <select id="borrowList" resultType="com.tem.booksys.entiy.BorrowRecord">
+            select * from borrow_record
+            <where>
+                <if test="userId!=null">
+                    userId = #{userId}
+                </if>
+                <if test="bookId!=null">
+                    and bookNum =#{bookId}
+                </if>
+                <if test="state!=null">
+                    and borrowState  = #{state}
+                </if>
+            </where>
+        </select>
+    <update id="returnBook">
+        update borrow_record set deadline=now(),borrowState=2 where bookNum=#{bookNum}
+    </update>
+
+    <insert id="addApplyRenewal">
+        insert into applyrecord(bookNum, userId, dayNum, borrowRecordId,applyState) VALUES (#{bookNum},#{userId},#{day},#{borrowRecordId},#{state})
+    </insert>
+
+    <select id="getApplyRenewalList" resultType="com.tem.booksys.entiy.ApplyRecord">
+        SELECT u.username,a.userId,a.bookNum,a.dayNum,b.cover_img,b.title,bo.borrowDate,bo.deadline,a.borrowRecordId,a.id,a.applyState
+        FROM user as u,applyrecord as a,article as b,borrow_record as bo
+        <where>
+
+        u.id=a.userId and a.bookNum=b.bookNum and  bo.id = a.borrowRecordId
+    </where>
+
+
+    </select>
+</mapper>
