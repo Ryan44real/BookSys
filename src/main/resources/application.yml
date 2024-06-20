@@ -1,13 +1,40 @@
 server:
-  port: 80
+  port: 8080
   servlet:
     context-path: /
   tomcat:
     uri-encoding: UTF-8
 
 spring:
+  servlet:
+    multipart:
+      enabled: true
+      file-size-threshold: 0
+      max-file-size: 10MB
+      max-request-size: 100MB
+  mail:
+    host: smtp.163.com
+    username: lsj18938740943@163.com
+    password: MYRTLXBGXBGRWOUU
+    default-encoding: utf-8
+
   datasource:
-    driver-class-name: com.mysql.jdbc.Driver
+    driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password:
-    type:
+    type: com.alibaba.druid.pool.DruidDataSource
+    url: jdbc:mysql://localhost:3306/cov?serverTimezone=GMT%2B8&useUnicode=true&characterEncoding=utf8
+  data:
+    redis:
+      host: localhost
+      port: 6379
+mybatis:
+  mapper-locations: classpath:mybatis/mapper/*.xml
+  type-aliases-package: com.tem.booksys.entity
+  #开启驼峰命名 驼峰命名和数据库中的下划线对应
+  configuration:
+    map-underscore-to-camel-case: true
+
+#邮箱授权码
+#MYRTLXBGXBGRWOUU
+
