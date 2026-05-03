@@ -17,6 +17,7 @@
 package com.tem.booksys.entiy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -32,6 +33,7 @@ import java.time.LocalTime;
  * @author <a href="mailto:chenxilzx1@gmail.com">theonefx</a>
  */
 @Data
+//@Table(name = "User")
 public class User {
     @NotNull
     private Integer id;

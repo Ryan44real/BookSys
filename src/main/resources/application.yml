@@ -21,19 +21,43 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password:
+    password: root
     type: com.alibaba.druid.pool.DruidDataSource
     url: jdbc:mysql://localhost:3306/cov?serverTimezone=GMT%2B8&useUnicode=true&characterEncoding=utf8
-  data:
-    redis:
-      host: localhost
-      port: 6379
+  initialization-mode: always  # 重要：确保初始化模式开启
+
+  jpa:
+    hibernate:
+      ddl-auto: create  # 关键配置，启动时创建表结构
+    show-sql: true      # 显示生成的SQL
+    generate-ddl: true  # 启用DDL生成
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        # 以下可选配置可以更精确控制生成行为
+        # hbm2ddl.auto: create
+        # hbm2ddl.create_namespaces: true
+        # hbm2ddl.charset_name: UTF-8
+
+  sql:
+    init:
+      mode: always      # 总是执行初始化
+      platform: mysql   # 指定数据库平台
+
+
 mybatis:
   mapper-locations: classpath:mybatis/mapper/*.xml
   type-aliases-package: com.tem.booksys.entity
   #开启驼峰命名 驼峰命名和数据库中的下划线对应
   configuration:
     map-underscore-to-camel-case: true
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.orm.jpa: DEBUG
 
 #邮箱授权码
 #MYRTLXBGXBGRWOUU
