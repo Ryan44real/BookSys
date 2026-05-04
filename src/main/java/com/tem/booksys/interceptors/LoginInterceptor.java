@@ -16,6 +16,8 @@ import java.util.Map;
 public class LoginInterceptor implements HandlerInterceptor {
     @Autowired
     private StringRedisTemplate  stringRedisTemplate;
+    @Autowired
+    private JwtUtil jwtUtil;
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String token = request.getHeader("Authorization");
 
@@ -28,7 +30,7 @@ public class LoginInterceptor implements HandlerInterceptor {
                 throw new RuntimeException();
             }
             //验证token
-            Map<String,Object> claims = JwtUtil.parseToken(redis);
+            Map<String,Object> claims = jwtUtil.parseToken(redis);
             //将用户信息放入线程缓存池中方便取出使用
             ThreadLocalUtil.set(claims);
             //放行

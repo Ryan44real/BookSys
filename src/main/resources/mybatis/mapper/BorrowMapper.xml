@@ -2,7 +2,7 @@
 <!--suppress ALL-->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tem.booksys.mapper.BorrowMapper">
-        <resultMap id="BorrowRecordResult" type="com.tem.booksys.entiy.BorrowRecord">
+        <resultMap id="BorrowRecordResult" type="com.tem.booksys.entity.BorrowRecord">
             <result property="id" column="id"></result>
             <result property="borrowDate" column="borrowDate"></result>
             <result property="deadline" column="deadline"></result>
@@ -18,7 +18,7 @@
             SELECT * FROM borrow_record where borrowState !=2 and userid = #{userid}
         </select>
 
-        <select id="borrowList" resultType="com.tem.booksys.entiy.BorrowRecord">
+        <select id="borrowList" resultType="com.tem.booksys.entity.BorrowRecord">
             select * from borrow_record
             <where>
                 <if test="userId!=null">
@@ -40,7 +40,7 @@
         insert into applyrecord(bookNum, userId, dayNum, borrowRecordId,applyState) VALUES (#{bookNum},#{userId},#{day},#{borrowRecordId},#{state})
     </insert>
 
-    <select id="getApplyRenewalList" resultType="com.tem.booksys.entiy.ApplyRecord">
+    <select id="getApplyRenewalList" resultType="com.tem.booksys.entity.ApplyRecord">
         SELECT u.username,a.userId,a.bookNum,a.dayNum,b.cover_img,b.title,bo.borrowDate,bo.deadline,a.borrowRecordId,a.id,a.applyState
         FROM user as u,applyrecord as a,article as b,borrow_record as bo
         <where>

@@ -1,6 +1,6 @@
 package com.tem.booksys.service.Impl;
 
-import com.tem.booksys.entiy.Category;
+import com.tem.booksys.entity.Category;
 import com.tem.booksys.mapper.CategoryMapper;
 import com.tem.booksys.service.CategoryService;
 import com.tem.booksys.utils.ThreadLocalUtil;

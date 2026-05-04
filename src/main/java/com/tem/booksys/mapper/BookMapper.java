@@ -1,6 +1,6 @@
 package com.tem.booksys.mapper;
 
-import com.tem.booksys.entiy.Article;
+import com.tem.booksys.entity.Article;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

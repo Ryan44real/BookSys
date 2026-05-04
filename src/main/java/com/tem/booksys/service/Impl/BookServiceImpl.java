@@ -3,8 +3,8 @@ package com.tem.booksys.service.Impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
-import com.tem.booksys.entiy.Article;
-import com.tem.booksys.entiy.PageBean;
+import com.tem.booksys.entity.Article;
+import com.tem.booksys.entity.PageBean;
 import com.tem.booksys.mapper.BookMapper;
 import com.tem.booksys.service.BookService;
 import com.tem.booksys.utils.GetThreadLocal;

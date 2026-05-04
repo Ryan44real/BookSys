@@ -1,8 +1,8 @@
 package com.tem.booksys.service;
 
-import com.tem.booksys.entiy.ApplyRecord;
-import com.tem.booksys.entiy.BorrowRecord;
-import com.tem.booksys.entiy.PageBean;
+import com.tem.booksys.entity.ApplyRecord;
+import com.tem.booksys.entity.BorrowRecord;
+import com.tem.booksys.entity.PageBean;
 
 import java.text.ParseException;
 import java.util.Date;

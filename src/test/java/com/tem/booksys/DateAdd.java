@@ -1,7 +1,7 @@
 package com.tem.booksys;
 
 import com.tem.booksys.controller.UserController;
-import com.tem.booksys.entiy.BorrowRecord;
+import com.tem.booksys.entity.BorrowRecord;
 import com.tem.booksys.mapper.BorrowMapper;
 import com.tem.booksys.service.BookService;
 import com.tem.booksys.service.BorrowService;
@@ -25,10 +25,12 @@ public class DateAdd {
     private BorrowService borrowService;
     @Autowired
     private UserController userController;
+    @Autowired
+    private ChineseGPT chineseGPT;
     @Test
     public void main() throws ParseException, JSONException, IOException {
 
-        ChineseGPT.GptResult("法治的细节","9787222204331");
+        chineseGPT.GptResult("法治的细节","9787222204331");
 //        System.out.println(userController.sendMail("731995024@qq.com"));
     }
 }

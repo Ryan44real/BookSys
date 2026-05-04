@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs -r sed -i 's/com\\\\.tem\\\\.booksys\\\\.entiy/com.tem.booksys.entity/g')",
+      "Bash(sed 's/\\\\xe2\\\\x80\\\\x9c/\"/g; s/\\\\xe2\\\\x80\\\\x9d/\"/g')",
+      "Bash(mv /tmp/tasktime_fixed.java c:/Users/73199/IdeaProjects/BookSys/src/main/java/com/tem/booksys/utils/TaskTimeUtil.java)",
+      "Bash(mvn compile *)",
+      "Bash(mvn test-compile *)",
+      "Bash(mvn test *)",
+      "WebFetch(domain:localhost)",
+      "Bash(curl -s http://localhost:8080/v3/api-docs)"
+    ]
+  }
+}

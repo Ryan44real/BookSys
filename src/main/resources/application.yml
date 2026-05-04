@@ -14,36 +14,51 @@ spring:
       max-request-size: 100MB
   mail:
     host: smtp.163.com
-    username: lsj18938740943@163.com
-    password: MYRTLXBGXBGRWOUU
+    username: ${MAIL_USERNAME:lsj18938740943@163.com}
+    password: ${MAIL_PASSWORD:MYRTLXBGXBGRWOUU}
     default-encoding: utf-8
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: root
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
     type: com.alibaba.druid.pool.DruidDataSource
-    url: jdbc:mysql://localhost:3306/cov?serverTimezone=GMT%2B8&useUnicode=true&characterEncoding=utf8
-  initialization-mode: always  # 重要：确保初始化模式开启
+    url: ${DB_URL:jdbc:mysql://localhost:3306/cov?serverTimezone=GMT%2B8&useUnicode=true&characterEncoding=utf8}
+    druid:
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        login-username: ${DRUID_USERNAME:admin}
+        login-password: ${DRUID_PASSWORD:admin123}
+      web-stat-filter:
+        enabled: true
+        url-pattern: /*
+        exclusions: "*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*"
+      filter:
+        stat:
+          enabled: true
+          log-slow-sql: true
+          slow-sql-millis: 2000
+        wall:
+          enabled: true
+  initialization-mode: never  # 重要：确保初始化模式开启
 
   jpa:
     hibernate:
-      ddl-auto: create  # 关键配置，启动时创建表结构
-    show-sql: true      # 显示生成的SQL
-    generate-ddl: true  # 启用DDL生成
+      ddl-auto: none   # 关闭JPA自动DDL，使用显式SQL脚本管理数据库
+    show-sql: true
+    generate-ddl: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
-        # 以下可选配置可以更精确控制生成行为
-        # hbm2ddl.auto: create
-        # hbm2ddl.create_namespaces: true
-        # hbm2ddl.charset_name: UTF-8
 
   sql:
     init:
-      mode: always      # 总是执行初始化
-      platform: mysql   # 指定数据库平台
+      mode: always
+      platform: mysql
+      schema-locations: classpath:db/init.sql
+      encoding: utf-8
 
 
 mybatis:
@@ -53,12 +68,30 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
 
-logging:
-  level:
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    org.springframework.orm.jpa: DEBUG
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /docs
+    url: /v3/api-docs
+    tags-sorter: alpha
+    operations-sorter: alpha
+  packages-to-scan: com.tem.booksys.controller
 
-#邮箱授权码
-#MYRTLXBGXBGRWOUU
+# BookSys 自定义配置
+booksys:
+  oss:
+    endpoint: ${OSS_ENDPOINT:https://oss-cn-guangzhou.aliyuncs.com}
+    access-key-id: ${OSS_ACCESS_KEY_ID:}
+    access-key-secret: ${OSS_ACCESS_KEY_SECRET:}
+    bucket-name: ${OSS_BUCKET_NAME:ryan4real}
+  baidu-ai:
+    api-key: ${BAIDU_AI_API_KEY:}
+    secret-key: ${BAIDU_AI_SECRET_KEY:}
+  jwt:
+    secret: ${JWT_SECRET:BookSys@2024!SecretKey}
+    expiration-hours: 1
+  python:
+    python-path: ${PYTHON_PATH:python}
+    script-path: ${PYTHON_SCRIPT:barcode.py}
 

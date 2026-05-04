@@ -1,6 +1,6 @@
 package com.tem.booksys.service;
 
-import com.tem.booksys.entiy.Category;
+import com.tem.booksys.entity.Category;
 
 import java.util.List;
 

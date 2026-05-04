@@ -1,11 +1,14 @@
 package com.tem.booksys.controller;
 
-import com.tem.booksys.entiy.*;
+import com.tem.booksys.entity.*;
 import com.tem.booksys.mapper.UserMapper;
 import com.tem.booksys.service.UserService;
 import com.tem.booksys.utils.JwtUtil;
 import com.tem.booksys.utils.Md5Util;
 import com.tem.booksys.utils.ThreadLocalUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import org.hibernate.validator.constraints.URL;
@@ -24,6 +27,7 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+@Tag(name = "用户管理", description = "用户注册、登录、信息管理等接口")
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -33,10 +37,15 @@ public class UserController {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Operation(summary = "健康检查")
     @GetMapping("/check")
     public Result check(){
         return Result.success();
     }
+    @Operation(summary = "用户注册", description = "通过邮箱验证码注册新用户")
     @PostMapping("/register")
     public Result register(@Pattern(regexp = "^\\S{5,16}$") String username, @Pattern(regexp = "^\\S{5,16}$")String password,
                            @RequestParam("mail") @Email String mail,@RequestParam("code") String code,@RequestParam(value = "type",required = false)Integer type){
@@ -55,6 +64,7 @@ public class UserController {
             return Result.error("用户名已经占用了");
         }
     }
+    @Operation(summary = "用户登录", description = "通过用户名密码登录，返回用户ID")
     @PostMapping("/login")
     public Result<String> login(@Pattern(regexp = "^\\S{5,16}$") String username, @Pattern(regexp = "^\\S{5,16}$")String password) {
         //根据用户名查找用户
@@ -74,7 +84,7 @@ public class UserController {
                 claims.put("username",u.getUsername());
                 claims.put("userState",u.getState());
                 claims.put("userType",u.getType());
-                String token = JwtUtil.genToken(claims);
+                String token = jwtUtil.genToken(claims);
                 //把token存储到redis中
                 ValueOperations<String,String> operations = stringRedisTemplate.opsForValue();
                 operations.set(String.valueOf(u.getId()),token,1, TimeUnit.HOURS);
@@ -86,6 +96,7 @@ public class UserController {
         }
     }
     
+    @Operation(summary = "获取当前用户信息")
     @GetMapping("/userInfo")
     public Result<User> userInfo(/*@RequestHeader(name = "Authorization") String token*/){
 
@@ -95,6 +106,7 @@ public class UserController {
 
     }
 
+    @Operation(summary = "更新用户信息")
     @PutMapping("/update")
     public Result update(@RequestBody @Validated User user){
 //        System.out.println(user);
@@ -103,6 +115,7 @@ public class UserController {
 
          return Result.success();
     }
+    @Operation(summary = "更新用户头像")
     @PatchMapping("/updateAvatar")
     public Result updateAvatar(@RequestParam @URL String avatarUrl){
         System.out.println(avatarUrl);
@@ -110,6 +123,7 @@ public class UserController {
         return Result.success();
     }
 
+    @Operation(summary = "修改密码", description = "需要旧密码验证，修改后Token失效需重新登录")
     @PatchMapping("/updatePwd")
     public Result updatePwd(@RequestBody Map<String,String> params,@RequestHeader("Authorization") String token){
 //        1.校验参数
@@ -162,6 +176,7 @@ public class UserController {
     @Autowired
     private JavaMailSender sender;
 
+    @Operation(summary = "发送邮箱验证码", description = "向指定邮箱发送6位数字验证码，有效期90秒")
     @GetMapping("/sendmail")
     public Result sendMail(@Email String mail){
         SimpleMailMessage message = new SimpleMailMessage();
@@ -185,6 +200,7 @@ public class UserController {
 
     @Autowired
     private UserMapper userMapper;
+    @Operation(summary = "查询用户借阅信息")
     @GetMapping("/userInfoForborrow")
     public Result<Map<String,Integer>> userInfoForBorrow(String userId){
         Integer res = userMapper.userInfoForBorrow(userId);
@@ -197,6 +213,7 @@ public class UserController {
         return Result.success(map);
     }
 
+    @Operation(summary = "获取用户列表", description = "管理员分页查询用户列表")
     @GetMapping("/getUserList")
     public  Result<PageBean<User>> getUserList(Integer pageNum, Integer pageSize,
                                                @RequestParam(required = false) String username,
@@ -207,6 +224,7 @@ public class UserController {
     }
 
 
+    @Operation(summary = "编辑用户", description = "管理员修改用户昵称或密码")
     @PatchMapping("/editUser")
     public Result editUser(@RequestBody Map<String,String> map){
         String id = map.get("id");
@@ -223,6 +241,7 @@ public class UserController {
         return Result.success();
     }
 
+    @Operation(summary = "清除用户消息")
     @GetMapping("/deleteUserMsg")
     public Result deleteUser(){
         Map<String,Object> map = ThreadLocalUtil.get();
@@ -232,12 +251,14 @@ public class UserController {
         return Result.success();
     }
 
+    @Operation(summary = "修改用户状态", description = "管理员启用/禁用用户借阅权限")
     @GetMapping("/upgradeUserState")
     public Result upgradeUserState(String id,Integer state){
         userMapper.updateState(id,state);
         return Result.success();
     }
 
+    @Operation(summary = "删除用户", description = "管理员删除用户")
     @GetMapping("/deleteUser")
     public Result deleteUser(String id){
         System.out.println("test"+id);
@@ -245,6 +266,7 @@ public class UserController {
         return Result.success();
     }
 
+    @Operation(summary = "获取用户总数")
     @GetMapping("/getUserNumService")
     public Result getUserNumService(){
         Integer res = userService.getUserNumService();
@@ -258,6 +280,7 @@ public class UserController {
 //
 //    }
 
+    @Operation(summary = "通过邮箱重置密码", description = "通过邮箱验证码重置密码")
     @PostMapping("/editPswByEmail")
     public Result editPswByEmail(@RequestParam("username")String username,@RequestParam("mail") @Email String mail,@RequestParam("code") String code,@RequestParam("password") String password){
         String userMail =  userMapper.getEmailByUsername(username);

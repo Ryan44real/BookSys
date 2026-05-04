@@ -2,8 +2,8 @@ package com.tem.booksys.service.Impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
-import com.tem.booksys.entiy.PageBean;
-import com.tem.booksys.entiy.User;
+import com.tem.booksys.entity.PageBean;
+import com.tem.booksys.entity.User;
 import com.tem.booksys.mapper.UserMapper;
 import com.tem.booksys.service.UserService;
 import com.tem.booksys.utils.Md5Util;

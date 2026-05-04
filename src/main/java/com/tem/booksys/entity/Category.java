@@ -1,4 +1,4 @@
-package com.tem.booksys.entiy;
+package com.tem.booksys.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotEmpty;

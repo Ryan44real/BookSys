@@ -1,7 +1,7 @@
 package com.tem.booksys.service;
 
-import com.tem.booksys.entiy.Article;
-import com.tem.booksys.entiy.PageBean;
+import com.tem.booksys.entity.Article;
+import com.tem.booksys.entity.PageBean;
 
 public interface BookService {
 //    新增文章or书籍

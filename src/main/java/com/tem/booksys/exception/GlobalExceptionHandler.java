@@ -1,7 +1,7 @@
 package com.tem.booksys.exception;
 
 
-import com.tem.booksys.entiy.Result;
+import com.tem.booksys.entity.Result;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;

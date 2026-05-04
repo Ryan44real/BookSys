@@ -3,16 +3,20 @@ package com.tem.booksys.controller;
 import com.google.zxing.*;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.HybridBinarizer;
-import com.tem.booksys.entiy.Article;
-import com.tem.booksys.entiy.PageBean;
-import com.tem.booksys.entiy.Result;
+import com.tem.booksys.entity.Article;
+import com.tem.booksys.entity.PageBean;
+import com.tem.booksys.entity.Result;
 import com.tem.booksys.mapper.BookMapper;
 import com.tem.booksys.service.BookService;
 import com.tem.booksys.utils.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.tomcat.util.http.fileupload.FileItem;
 import org.apache.tomcat.util.http.fileupload.disk.DiskFileItemFactory;
 import org.codehaus.jettison.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,16 +33,26 @@ import java.util.UUID;
 
 import static java.lang.Thread.sleep;
 
+@Tag(name = "图书管理", description = "图书/文章的增删改查、条码识别、AI简介等接口")
 @RestController
 @RequestMapping("/article")
 public class BookController {
 
     @Autowired
     private BookMapper bookMapper;
+    @Autowired
     private JavaCallPython javaCallPython;
     private Base64Img base64Img;
     @Autowired
     private BookService bookService;
+    @Autowired
+    private ChineseGPT chineseGPT;
+    @Autowired
+    private AliOssUtil aliOssUtil;
+
+    @Value("${booksys.barcode.base-path:./barcodes}")
+    private String barcodeBasePath;
+    @Operation(summary = "新增图书")
     @PostMapping
     public Result add(@RequestBody Article article){
         System.out.println(article);
@@ -47,6 +61,7 @@ public class BookController {
         return Result.success();
     }
 
+    @Operation(summary = "获取图书列表", description = "分页条件查询图书，支持分类、状态、标题筛选")
     @GetMapping("/getBookList")
     public Result<PageBean<Article>> list(Integer pageNum,
                                           Integer pageSize,
@@ -57,6 +72,7 @@ public class BookController {
 
         return Result.success(pb);
     }
+    @Operation(summary = "获取图书详情")
     @GetMapping("/detail")
     public Result<Article> detail(@RequestParam String id){
 //        System.out.println("detail"+id);
@@ -65,27 +81,31 @@ public class BookController {
         return Result.success(article);
     }
 
+    @Operation(summary = "更新图书")
     @PutMapping
     public Result update(@RequestBody Article article){
         bookService.update(article);
         return Result.success();
     }
 
+    @Operation(summary = "删除图书")
     @DeleteMapping
     public Result delete(@RequestParam String id){
         bookService.delete(id);
         return Result.success();
     }
 
+    @Operation(summary = "获取AI图书简介", description = "调用百度ERNIE生成图书简介")
     @GetMapping("/getBookContent")
     public Result<String> getBookContent(String bookName,String bookNum) throws JSONException, IOException {
-        String res = ChineseGPT.GptResult(bookName,bookNum);
+        String res = chineseGPT.GptResult(bookName,bookNum);
 //        System.out.println(res);
         return Result.success(res);
     }
+    @Operation(summary = "识别图书条形码", description = "解码上传的条形码图片")
     @GetMapping("/getBookBarcode")
     public Result getBookBarcode(String base64) throws JSONException, IOException, NotFoundException, InterruptedException {
-        String imgFilePath = "C:/Users/Rain/Desktop/BYSJ/"+base64;
+        String imgFilePath = barcodeBasePath + "/" + base64;
         System.out.println(imgFilePath);
         sleep(1000);
 
@@ -103,14 +123,16 @@ public class BookController {
         return Result.success();
     }
 
+    @Operation(summary = "Python条形码识别", description = "调用Python脚本进行条形码识别")
     @GetMapping("/getBookBarcodeByPy")
     public Result getBookBarcodeByPy(){
         System.out.println("getBookBarcodeByPy");
-        String res =  JavaCallPython.barcode();
+        String res = javaCallPython.barcode();
         System.out.println(res);
         return Result.success(res);
     }
 
+    @Operation(summary = "生成图书编号", description = "根据ISBN用SHA-256生成6位图书编号")
     @GetMapping("/buildBookNumService")
     public Result buildBookNum(String isbn) throws NoSuchAlgorithmException {
 //        System.out.println("学习先");
@@ -140,6 +162,7 @@ public class BookController {
         return Result.success(result);
     }
 
+    @Operation(summary = "获取图书总数")
     @GetMapping("/getBookNumService")
     public Result<Integer> getBookNum(){
         Integer res = bookService.getBookNum();
@@ -147,6 +170,7 @@ public class BookController {
         return Result.success(res);
     }
 
+    @Operation(summary = "获取可借阅图书数量")
     @GetMapping("/getBookNumUseService")
     public Result<Integer> getBookNumUse(){
         Integer res = bookMapper.getBookNumUse();
@@ -156,6 +180,7 @@ public class BookController {
     @Autowired
     private FileUploadController fileUploadController;
 
+    @Operation(summary = "生成二维码", description = "根据ISBN生成二维码并上传至阿里云OSS")
     @GetMapping("/buildQrCode")
     public Result buildQrCode(String isbn) throws Exception {
         System.out.println(isbn);
@@ -165,7 +190,7 @@ public class BookController {
         System.out.println(file);
         InputStream input = new FileInputStream(file);
         String filename = UUID.randomUUID().toString()+"QRCode.png";
-        String url = AliOssUtil.uploadFile(filename,input);
+        String url = aliOssUtil.uploadFile(filename,input);
         return Result.success(url);
     }
     public static FileItem creatFileItem(File file) {

@@ -1,14 +1,18 @@
 package com.tem.booksys.controller;
 
-import com.tem.booksys.entiy.ApplyRecord;
-import com.tem.booksys.entiy.BorrowRecord;
-import com.tem.booksys.entiy.PageBean;
-import com.tem.booksys.entiy.Result;
+import com.tem.booksys.entity.ApplyRecord;
+import com.tem.booksys.entity.BorrowRecord;
+import com.tem.booksys.entity.PageBean;
+import com.tem.booksys.entity.Result;
 import com.tem.booksys.mapper.BookMapper;
 import com.tem.booksys.mapper.BorrowMapper;
 import com.tem.booksys.mapper.UserMapper;
 import com.tem.booksys.service.BorrowService;
+import com.tem.booksys.utils.BookLockManager;
 import com.tem.booksys.utils.ThreadLocalUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -20,7 +24,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
+@Tag(name = "借阅管理", description = "图书借阅、归还、续借申请与审批等接口")
 @RestController
 @RequestMapping("/borrow")
 public class BorrowController {
@@ -29,8 +35,11 @@ public class BorrowController {
     private BorrowService borrowService;
     @Autowired
     private BookMapper bookMapper;
+    @Autowired
+    private BookLockManager bookLockManager;
 
 //    借书功能
+    @Operation(summary = "借阅图书", description = "借阅指定图书，验证用户状态、逾期情况，最多借6本")
     @GetMapping("/borrowBook")
     public Result borrowBook(@RequestParam Integer bookId,@RequestParam Integer day) throws ParseException {
         Map<String,Object> map = ThreadLocalUtil.get();
@@ -54,14 +63,17 @@ public class BorrowController {
         }
         if (records.size()>=6) return Result.error("借阅上限了哥们");
 
-        //先校验该书籍的状态，当不可借阅时直接返回不可借阅，在前端也要做校验。
-        //加入线程锁，保证对同一本书进行并发访问时，保证第一个能借到
-        synchronized (this){
+        //使用per-book细粒度锁，保证同一本书的并发安全
+        ReentrantLock lock = bookLockManager.getLock(bookid);
+        lock.lock();
+        try {
             String resState = bookMapper.findByBookNum(bookid).getState();
             if (resState.equals("已借出")){
                 return Result.error("该书籍已经借出");
             }
             borrowService.borrowBook(bookId,day);
+        } finally {
+            lock.unlock();
         }
 
 
@@ -71,6 +83,7 @@ public class BorrowController {
     @Autowired
     private UserMapper userMapper;
     //我的借阅记录，和，借阅记录管理
+    @Operation(summary = "获取借阅记录", description = "分页查询借阅记录，管理员可查全部，用户仅看自己的")
     @GetMapping("/getRecord")
     public Result<PageBean<BorrowRecord>> list(Integer pageNum,
                                            Integer pageSize,
@@ -93,6 +106,7 @@ public class BorrowController {
         return Result.success(pb);
     }
 
+    @Operation(summary = "归还图书")
     @PostMapping("/returnBook")
     public Result returnBook(@RequestParam(value = "userId",required = false)Integer userId,@RequestParam("bookNum")String bookNum){
         System.out.println("还书"+userId+bookNum);
@@ -103,6 +117,7 @@ public class BorrowController {
 
     @Autowired
     private BorrowMapper borrowMapper;
+    @Operation(summary = "申请续借", description = "对已借阅的图书申请延长借阅期限")
     @GetMapping("/applyRenewal")
     public Result extendBorrow(@RequestParam("bookNum") Integer bookNum, @RequestParam("day")Integer day,
                                @RequestParam("borrowRecordId") Integer borrowRecordId){
@@ -118,6 +133,7 @@ public class BorrowController {
         }
     }
 
+    @Operation(summary = "获取续借申请列表")
     @GetMapping("/getApplyRenewalList")
     public Result<PageBean<ApplyRecord>> getApplyRenewalList(@RequestParam Integer pageNum,
                                                              @RequestParam Integer pageSize,
@@ -134,6 +150,7 @@ public class BorrowController {
     * day 续借的天数
     * deadline 原的归还日期
     * */
+    @Operation(summary = "批准续借", description = "管理员批准续借申请，更新归还日期")
     @GetMapping("/passApply")
     public Result passApply(@RequestParam(value = "id") Integer id,
                             @RequestParam(name = "borrowRecordId") Integer borrowRecordId,
@@ -150,6 +167,7 @@ public class BorrowController {
         return Result.success();
     }
     //这里的id 是申请续借记录的id
+    @Operation(summary = "拒绝续借", description = "管理员拒绝续借申请")
     @GetMapping("/rejectApply")
     public Result rejectApply(String id){
         borrowMapper.updateApply(Integer.valueOf(id),3);
@@ -159,6 +177,7 @@ public class BorrowController {
         userMapper.updateMsg(msg,id);
         return Result.success();
     }
+    @Operation(summary = "编辑借阅记录", description = "管理员修改借阅记录")
     @PostMapping("/editRecord")
     public Result editRecord(Integer userId,Integer borrowId,Date date1,Date date2,Integer state,Integer bookNum){
         System.out.println(userId);
@@ -186,6 +205,7 @@ public class BorrowController {
     @Autowired
     private JavaMailSender sender;
     //催促
+    @Operation(summary = "催还提醒", description = "发送邮件提醒用户归还即将逾期图书")
     @GetMapping("/urge")
     public Result urge(String id){
         String msg = userMapper.getMsg(id);
@@ -204,12 +224,14 @@ public class BorrowController {
         return Result.success();
     }
     //获得借书数量
+    @Operation(summary = "获取借阅总数")
     @GetMapping("/getAllBorrowNum")
     public Result getBorrowNum(){
         Integer res = borrowMapper.getAllBorrowNum();
         return Result.success(res);
     }
 
+    @Operation(summary = "获取我的借阅数量")
     @GetMapping("/getMyRecordNumService")
     public Result getMyRecordNumService(){
         Map<String,Object> map = ThreadLocalUtil.get();

@@ -6,57 +6,37 @@ import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.PutObjectRequest;
 import com.aliyun.oss.model.PutObjectResult;
+import com.tem.booksys.config.AppConfigProperties;
+import org.springframework.stereotype.Component;
 
-import java.io.FileInputStream;
 import java.io.InputStream;
 
+@Component
 public class AliOssUtil {
 
-        // Endpoint以华东1（杭州）为例，其它Region请按实际情况填写。
-        private static final String ENDPOINT = "https://oss-cn-guangzhou.aliyuncs.com";
-        // 从环境变量中获取访问凭证。运行本代码示例之前，请确保已设置环境变量OSS_ACCESS_KEY_ID和OSS_ACCESS_KEY_SECRET。
-//        EnvironmentVariableCredentialsProvider credentialsProvider = CredentialsProviderFactory.newEnvironmentVariableCredentialsProvider();
-        private static final String ACCESS_KEY_ID = "LTAI5tCMz8ELrKT5nFci6aa7";
-        private static final String ACCESS_KEY_SECRET = "AqsVpQxcSyeOtKXRhXEqugdOhIAThl";
-        // 填写Bucket名称，例如examplebucket。
-        private static final String BUCKET_NAME = "ryan4real";
-    public static String uploadFile(String objectName, InputStream in) throws Exception{
+    private final String endpoint;
+    private final String accessKeyId;
+    private final String accessKeySecret;
+    private final String bucketName;
 
-        // 填写Object完整路径，完整路径中不能包含Bucket名称，例如exampledir/exampleobject.txt。
-//        String objectName = "kkp.png";
+    public AliOssUtil(AppConfigProperties config) {
+        this.endpoint = config.getOss().getEndpoint();
+        this.accessKeyId = config.getOss().getAccessKeyId();
+        this.accessKeySecret = config.getOss().getAccessKeySecret();
+        this.bucketName = config.getOss().getBucketName();
+    }
 
-        // 创建OSSClient实例。
-        OSS ossClient = new OSSClientBuilder().build(ENDPOINT, ACCESS_KEY_ID,ACCESS_KEY_SECRET);
-        String url ="";
+    public String uploadFile(String objectName, InputStream in) {
+        OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
+        String url = "";
         try {
-            // 填写字符串。
-            String content = "Hello OSS，你好世界";
-
-            // 创建PutObjectRequest对象。
-            PutObjectRequest putObjectRequest = new PutObjectRequest(BUCKET_NAME, objectName,in);
-
-            // 如果需要上传时设置存储类型和访问权限，请参考以下示例代码。
-            // ObjectMetadata metadata = new ObjectMetadata();
-            // metadata.setHeader(OSSHeaders.OSS_STORAGE_CLASS, StorageClass.Standard.toString());
-            // metadata.setObjectAcl(CannedAccessControlList.Private);
-            // putObjectRequest.setMetadata(metadata);
-
-            // 上传字符串。
-            PutObjectResult result = ossClient.putObject(putObjectRequest);
-            //url组成： https://bucket名称.区域结点/objectName
-            url = "https://"+BUCKET_NAME+"."+ENDPOINT.substring(ENDPOINT.lastIndexOf("/")+1)+"/"+objectName;
+            PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, objectName, in);
+            ossClient.putObject(putObjectRequest);
+            url = "https://" + bucketName + "." + endpoint.substring(endpoint.lastIndexOf("/") + 1) + "/" + objectName;
         } catch (OSSException oe) {
-            System.out.println("Caught an OSSException, which means your request made it to OSS, "
-                    + "but was rejected with an error response for some reason.");
-            System.out.println("Error Message:" + oe.getErrorMessage());
-            System.out.println("Error Code:" + oe.getErrorCode());
-            System.out.println("Request ID:" + oe.getRequestId());
-            System.out.println("Host ID:" + oe.getHostId());
+            System.err.println("OSS error: " + oe.getErrorMessage());
         } catch (ClientException ce) {
-            System.out.println("Caught an ClientException, which means the client encountered "
-                    + "a serious internal problem while trying to communicate with OSS, "
-                    + "such as not being able to access the network.");
-            System.out.println("Error Message:" + ce.getMessage());
+            System.err.println("OSS client error: " + ce.getMessage());
         } finally {
             if (ossClient != null) {
                 ossClient.shutdown();
@@ -64,7 +44,4 @@ public class AliOssUtil {
         }
         return url;
     }
-
-
-
 }

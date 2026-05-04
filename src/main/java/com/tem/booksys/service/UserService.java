@@ -1,7 +1,7 @@
 package com.tem.booksys.service;
 
-import com.tem.booksys.entiy.PageBean;
-import com.tem.booksys.entiy.User;
+import com.tem.booksys.entity.PageBean;
+import com.tem.booksys.entity.User;
 
 public interface UserService {
     //根据用户名找用户

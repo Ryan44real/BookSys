@@ -1,0 +1,46 @@
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL
+    username: sa
+    password:
+    druid:
+      stat-view-servlet:
+        enabled: false
+      web-stat-filter:
+        enabled: false
+      filter:
+        stat:
+          enabled: false
+        wall:
+          enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    generate-ddl: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  mail:
+    host: localhost
+    username: test@test.com
+    password: test
+  sql:
+    init:
+      mode: never
+
+booksys:
+  oss:
+    endpoint: https://test.oss.com
+    access-key-id: test-key
+    access-key-secret: test-secret
+    bucket-name: test-bucket
+  baidu-ai:
+    api-key: test-ai-key
+    secret-key: test-ai-secret
+  jwt:
+    secret: test-jwt-secret
+  python:
+    python-path: python
+    script-path: test.py

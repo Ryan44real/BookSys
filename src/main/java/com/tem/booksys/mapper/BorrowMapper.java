@@ -1,7 +1,7 @@
 package com.tem.booksys.mapper;
 
-import com.tem.booksys.entiy.ApplyRecord;
-import com.tem.booksys.entiy.BorrowRecord;
+import com.tem.booksys.entity.ApplyRecord;
+import com.tem.booksys.entity.BorrowRecord;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;

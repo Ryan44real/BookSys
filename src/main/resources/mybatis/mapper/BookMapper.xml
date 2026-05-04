@@ -6,7 +6,7 @@
         VALUES (#{title},#{content},#{coverImg},#{state},#{categoryId},#{createUser},#{createTime},#{updateTime},#{location},#{bookNum},#{publisher},#{isbn},#{isbnPhoto})
     </insert>
 
-    <select id="list" resultType="com.tem.booksys.entiy.Article">
+    <select id="list" resultType="com.tem.booksys.entity.Article">
         select * from article
         <where>
             <if test="categoryId!=null">
@@ -21,7 +21,7 @@
         </where>
     </select>
 
-    <update id="update" parameterType="com.tem.booksys.entiy.Article">
+    <update id="update" parameterType="com.tem.booksys.entity.Article">
         update article set title=#{title},content=#{content},cover_img=#{coverImg},state=#{state},category_id=#{categoryId} where bookNum=#{bookNum}
 
     </update>

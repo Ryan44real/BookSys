@@ -1,6 +1,6 @@
 package com.tem.booksys.mapper;
 
-import com.tem.booksys.entiy.User;
+import com.tem.booksys.entity.User;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
