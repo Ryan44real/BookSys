@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 public class AppConfigProperties {
 
     private OssConfig oss = new OssConfig();
-    private BaiduAiConfig baiduAi = new BaiduAiConfig();
+    private DeepSeekConfig deepseek = new DeepSeekConfig();
     private JwtConfig jwt = new JwtConfig();
     private PythonConfig python = new PythonConfig();
 
@@ -23,9 +23,9 @@ public class AppConfigProperties {
     }
 
     @Data
-    public static class BaiduAiConfig {
+    public static class DeepSeekConfig {
         private String apiKey;
-        private String secretKey;
+        private String defaultModel = "deepseek-v4-pro";
     }
 
     @Data

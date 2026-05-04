@@ -3,11 +3,13 @@ package com.tem.booksys.service;
 import com.tem.booksys.entity.Article;
 import com.tem.booksys.entity.PageBean;
 
+import java.util.List;
+
 public interface BookService {
-//    新增文章or书籍
     void add(Article article);
-    //条件分页查询
-    PageBean<Article> list(Integer pageNum, Integer pageSize, String categoryId,String title,String state);
+
+    PageBean<Article> list(Integer pageNum, Integer pageSize, String categoryId, String title, String state,
+                           String tag, List<String> tagList);
 
     Article findById(String id);
 

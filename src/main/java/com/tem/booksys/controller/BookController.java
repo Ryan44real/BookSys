@@ -8,6 +8,7 @@ import com.tem.booksys.entity.PageBean;
 import com.tem.booksys.entity.Result;
 import com.tem.booksys.mapper.BookMapper;
 import com.tem.booksys.service.BookService;
+import com.tem.booksys.service.CommentService;
 import com.tem.booksys.utils.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,8 +29,8 @@ import java.math.BigInteger;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.lang.Thread.sleep;
 
@@ -49,6 +50,8 @@ public class BookController {
     private ChineseGPT chineseGPT;
     @Autowired
     private AliOssUtil aliOssUtil;
+    @Autowired
+    private CommentService commentService;
 
     @Value("${booksys.barcode.base-path:./barcodes}")
     private String barcodeBasePath;
@@ -61,24 +64,62 @@ public class BookController {
         return Result.success();
     }
 
-    @Operation(summary = "获取图书列表", description = "分页条件查询图书，支持分类、状态、标题筛选")
+    @Operation(summary = "获取图书列表", description = "分页条件查询图书，支持分类/状态/标题/标签筛选及评分排序。sortBy可选: rating_desc / rating_asc / popular")
     @GetMapping("/getBookList")
     public Result<PageBean<Article>> list(Integer pageNum,
                                           Integer pageSize,
                                           @RequestParam(required = false) String categoryId,
                                           @RequestParam(required = false) String state,
-                                          @RequestParam(required = false) String title){
-        PageBean<Article> pb = bookService.list(pageNum,pageSize,categoryId,title,state);
-
+                                          @RequestParam(required = false) String title,
+                                          @Parameter(description = "单个标签筛选") @RequestParam(required = false) String tag,
+                                          @Parameter(description = "多个标签，逗号分隔") @RequestParam(required = false) String tags,
+                                          @Parameter(description = "排序") @RequestParam(required = false) String sortBy){
+        List<String> tagList = (tags != null && !tags.isBlank())
+                ? Arrays.asList(tags.split(","))
+                : null;
+        PageBean<Article> pb = bookService.list(pageNum, pageSize, categoryId, title, state, tag, tagList);
+        if (sortBy != null && pb.getItems() != null) {
+            List<Article> items = pb.getItems();
+            if ("rating_desc".equals(sortBy)) {
+                items.sort((a, b) -> Double.compare(
+                        commentService.getAvgRating(b.getBookNum()) != null ? commentService.getAvgRating(b.getBookNum()) : 0,
+                        commentService.getAvgRating(a.getBookNum()) != null ? commentService.getAvgRating(a.getBookNum()) : 0));
+            } else if ("rating_asc".equals(sortBy)) {
+                items.sort((a, b) -> Double.compare(
+                        commentService.getAvgRating(a.getBookNum()) != null ? commentService.getAvgRating(a.getBookNum()) : 0,
+                        commentService.getAvgRating(b.getBookNum()) != null ? commentService.getAvgRating(b.getBookNum()) : 0));
+            } else if ("popular".equals(sortBy)) {
+                items.sort((a, b) -> Integer.compare(
+                        commentService.getCommentCount(b.getBookNum()),
+                        commentService.getCommentCount(a.getBookNum())));
+            }
+        }
         return Result.success(pb);
     }
-    @Operation(summary = "获取图书详情")
+
+    @Operation(summary = "获取全部标签", description = "返回全库已有的热门标签，供前端渲染筛选按钮")
+    @GetMapping("/allTags")
+    public Result<List<String>> allTags() {
+        List<String> tags = bookMapper.getAllTags();
+        // 去空白、去重
+        tags = tags.stream()
+                .map(String::trim)
+                .filter(t -> !t.isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+        return Result.success(tags);
+    }
+    @Operation(summary = "获取图书详情（含评分）", description = "返回图书信息 + 平均评分 + 评论数")
     @GetMapping("/detail")
-    public Result<Article> detail(@RequestParam String id){
-//        System.out.println("detail"+id);
+    public Result<Map<String, Object>> detail(@RequestParam String id){
         Article article = bookService.findById(id);
-//        System.out.println(article);
-        return Result.success(article);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("article", article);
+        if (article != null && article.getBookNum() != null) {
+            result.put("avgRating", commentService.getAvgRating(article.getBookNum()));
+            result.put("commentCount", commentService.getCommentCount(article.getBookNum()));
+        }
+        return Result.success(result);
     }
 
     @Operation(summary = "更新图书")
@@ -95,11 +136,13 @@ public class BookController {
         return Result.success();
     }
 
-    @Operation(summary = "获取AI图书简介", description = "调用百度ERNIE生成图书简介")
+    @Operation(summary = "获取AI图书简介", description = "调用百度ERNIE生成图书简介，支持 model 参数指定模型")
     @GetMapping("/getBookContent")
-    public Result<String> getBookContent(String bookName,String bookNum) throws JSONException, IOException {
-        String res = chineseGPT.GptResult(bookName,bookNum);
-//        System.out.println(res);
+    public Result<String> getBookContent(
+            @Parameter(description = "书名") String bookName,
+            @Parameter(description = "ISBN") String bookNum,
+            @Parameter(description = "模型名称") @RequestParam(required = false, defaultValue = "deepseek-v4-pro") String model) throws JSONException, IOException {
+        String res = chineseGPT.GptResult(bookName, bookNum, model);
         return Result.success(res);
     }
     @Operation(summary = "识别图书条形码", description = "解码上传的条形码图片")

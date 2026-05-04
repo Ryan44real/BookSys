@@ -58,6 +58,7 @@ public class User {
     private Integer state;
 //    private  Integer isBorrow;
     private String msg;
+    private Integer creditScore; // 信用积分，默认 100
 
 
 }

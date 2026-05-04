@@ -36,5 +36,6 @@ public class Article {
     private String isbn;
 
     private String isbnPhoto;//isbn图像
+    private String tags;       // AI提取的标签，逗号分隔
 
 }

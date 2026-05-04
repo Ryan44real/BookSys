@@ -18,8 +18,6 @@ import java.util.Date;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,12 +28,14 @@ class BorrowServiceTest {
 
     @Mock
     private BorrowMapper borrowMapper;
-
     @Mock
     private BookMapper bookMapper;
-
     @Mock
     private UserMapper userMapper;
+    @Mock
+    private CreditService creditService;
+    @Mock
+    private ReservationService reservationService;
 
     @InjectMocks
     private BorrowServiceImpl borrowService;
@@ -64,8 +64,10 @@ class BorrowServiceTest {
     }
 
     @Test
-    @DisplayName("归还图书")
+    @DisplayName("归还图书-更新状态和检查预约队列")
     void returnBook_shouldUpdateState() {
+        when(borrowMapper.borrowList(1, 100001, null)).thenReturn(Arrays.asList(record));
+
         borrowService.returnBook(1, 100001);
 
         verify(bookMapper).updateOne(100001, "可借阅");

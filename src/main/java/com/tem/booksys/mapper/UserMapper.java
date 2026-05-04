@@ -54,4 +54,13 @@ public interface UserMapper {
 
     @Select("select email from user where id = #{id}")
     String getMail(String id);
+
+    @Update("update user set credit_score=credit_score + #{arg0} where id=#{arg1}")
+    void updateCreditScore(Integer amount, Integer userId);
+
+    @Select("select credit_score from user where id=#{id}")
+    Integer getCreditScore(Integer id);
+
+    @Select("select id from user")
+    List<Integer> getAllUserIds();
 }

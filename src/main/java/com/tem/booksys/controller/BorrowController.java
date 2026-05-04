@@ -1,6 +1,7 @@
 package com.tem.booksys.controller;
 
 import com.tem.booksys.entity.ApplyRecord;
+import com.tem.booksys.entity.Article;
 import com.tem.booksys.entity.BorrowRecord;
 import com.tem.booksys.entity.PageBean;
 import com.tem.booksys.entity.Result;
@@ -8,6 +9,9 @@ import com.tem.booksys.mapper.BookMapper;
 import com.tem.booksys.mapper.BorrowMapper;
 import com.tem.booksys.mapper.UserMapper;
 import com.tem.booksys.service.BorrowService;
+import com.tem.booksys.mapper.ReservationMapper;
+import com.tem.booksys.service.CreditService;
+import com.tem.booksys.service.DashboardService;
 import com.tem.booksys.utils.BookLockManager;
 import com.tem.booksys.utils.ThreadLocalUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,9 +41,15 @@ public class BorrowController {
     private BookMapper bookMapper;
     @Autowired
     private BookLockManager bookLockManager;
+    @Autowired
+    private CreditService creditService;
+    @Autowired
+    private ReservationMapper reservationMapper;
+    @Autowired
+    private DashboardService dashboardService;
 
 //    借书功能
-    @Operation(summary = "借阅图书", description = "借阅指定图书，验证用户状态、逾期情况，最多借6本")
+    @Operation(summary = "借阅图书", description = "借阅指定图书，验证用户状态/信用额度/逾期情况，使用per-book锁")
     @GetMapping("/borrowBook")
     public Result borrowBook(@RequestParam Integer bookId,@RequestParam Integer day) throws ParseException {
         Map<String,Object> map = ThreadLocalUtil.get();
@@ -47,28 +57,46 @@ public class BorrowController {
 
         String bookid = String.valueOf(bookId);
 
-        //校验该用户是否可以进行借阅
-        //1.用户状态为不可借阅2.达到书籍借阅数量上限，是否有逾期；
-        //用户状态
+        // 1. 用户状态校验
         Integer userState = (Integer) map.get("userState");
         if (userState == 2){
             return Result.error("该用户当前不允许借阅");
         }
-        //查找该用户当前是否有逾期书籍未归还，或者书籍借阅数量达到上限。
 
-        //该方法的查询的结果是，不是在借阅中状态的数据
-        List<BorrowRecord> records = borrowService.findOverdueOrMax(userId);
-        for (int i = 0;i<=records.size()-1;i++){
-            if (records.get(i).getBorrowState()==3) return Result.error("存在逾期书籍");
+        // 2. 信用分校验：获取借阅额度上限
+        Article article = bookMapper.findByBookNum(bookid);
+        int creditScore = userMapper.getCreditScore(userId);
+        int borrowLimit = creditService.getBorrowLimit(creditScore);
+        String creditTier = creditService.getCreditTier(creditScore);
+        if (borrowLimit == 0) {
+            return Result.error("您的信用分(" + creditScore + ")过低，账户已冻结，请联系管理员");
         }
-        if (records.size()>=6) return Result.error("借阅上限了哥们");
 
-        //使用per-book细粒度锁，保证同一本书的并发安全
+        // 3. 逾期检查 + 借阅数量检查
+        List<BorrowRecord> records = borrowService.findOverdueOrMax(userId);
+        for (int i = 0; i < records.size(); i++){
+            if (records.get(i).getBorrowState() == 3) return Result.error("存在逾期书籍，请先归还");
+        }
+        if (records.size() >= borrowLimit) {
+            return Result.error("借阅已达上限(" + borrowLimit + "本)，当前信用等级：" + creditTier + "(" + creditScore + "分)");
+        }
+
+        // 4. 预约锁定检查：只有预约人本人可借
+        if ("预约锁定".equals(article.getState())) {
+            var firstReservation = reservationMapper.getFirstInQueue(bookId);
+            if (firstReservation == null || !firstReservation.getUserId().equals(userId)) {
+                return Result.error("该图书已被预约锁定，仅预约人可借阅");
+            }
+            // 预约人取书后清除预约记录
+            reservationMapper.updateStatus(firstReservation.getId(), 4);
+        }
+
+        // 5. 使用per-book细粒度锁，保证同一本书的并发安全
         ReentrantLock lock = bookLockManager.getLock(bookid);
         lock.lock();
         try {
             String resState = bookMapper.findByBookNum(bookid).getState();
-            if (resState.equals("已借出")){
+            if ("已借出".equals(resState)){
                 return Result.error("该书籍已经借出");
             }
             borrowService.borrowBook(bookId,day);
@@ -111,6 +139,12 @@ public class BorrowController {
     public Result returnBook(@RequestParam(value = "userId",required = false)Integer userId,@RequestParam("bookNum")String bookNum){
         System.out.println("还书"+userId+bookNum);
         borrowService.returnBook(userId,bookNum);
+        // 异步触发成就检查
+        Map<String,Object> map = ThreadLocalUtil.get();
+        Integer currentUserId = (map != null) ? (Integer) map.get("id") : userId;
+        if (currentUserId != null) {
+            dashboardService.checkAndGrantAchievements(currentUserId);
+        }
         return Result.success();
     }
 

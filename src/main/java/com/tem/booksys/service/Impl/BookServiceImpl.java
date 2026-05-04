@@ -36,15 +36,12 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    public PageBean<Article> list(Integer pageNum, Integer pageSize, String categoryId,String title,String state) {
-//        1.创建PageBean对象
+    public PageBean<Article> list(Integer pageNum, Integer pageSize, String categoryId, String title, String state,
+                                   String tag, List<String> tagList) {
         PageBean<Article> pb = new PageBean<>();
-//        2.开启分页查询 PageHelper
-        PageHelper.startPage(pageNum,pageSize);
-//        3.调用mapper,userId是因为当前用户只能访问自己的
-        Map<String,Object> map = ThreadLocalUtil.get();
-//        Integer userId = (Integer) map.get("id");
-        List<Article> as = bookMapper.list(1,categoryId,title,state);
+        PageHelper.startPage(pageNum, pageSize);
+        Map<String, Object> map = ThreadLocalUtil.get();
+        List<Article> as = bookMapper.list(1, categoryId, title, state, tag, tagList);
         //Page中提供了方法，可以获取PageHelper分页查询后得到的总记录数据和当前页数据
 //       强转是因为，不能从一个父类对象中中取出子对象的属性,不用以下的方法用as强转为as也可以，idea会帮之处理
         Page<Article> p = (Page<Article>) as;
