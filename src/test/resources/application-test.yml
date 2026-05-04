@@ -36,9 +36,9 @@ booksys:
     access-key-id: test-key
     access-key-secret: test-secret
     bucket-name: test-bucket
-  baidu-ai:
-    api-key: test-ai-key
-    secret-key: test-ai-secret
+  deepseek:
+    api-key: test-deepseek-key
+    default-model: deepseek-v4-pro
   jwt:
     secret: test-jwt-secret
   python:

@@ -103,24 +103,39 @@ public class BorrowServiceImpl implements BorrowService {
 
     @Override
     public void returnBook(Integer userId, String bookNum) {
-        // 1. 先更新数据库：归还
-        bookMapper.updateOne(Integer.valueOf(bookNum), "可借阅");
-        int borrowState = getBorrowState(userId, Integer.valueOf(bookNum));
-        borrowMapper.returnBook(Integer.valueOf(bookNum), userId);
-        borrowMapper.editApply(Integer.valueOf(bookNum), userId);
+        Integer bookNumInt = Integer.valueOf(bookNum);
 
-        // 2. 信用分计算
-        if (borrowState == 1) {
-            creditService.addOnTimeReturn(userId, findBorrowRecordId(userId, Integer.valueOf(bookNum)));
+        // 如果 userId 为空，从借阅记录中查找实际借阅人
+        if (userId == null) {
+            List<BorrowRecord> activeRecords = borrowMapper.borrowList(null, bookNumInt, 1);
+            if (!activeRecords.isEmpty()) {
+                userId = activeRecords.get(0).getUserId();
+            }
+            if (userId == null) {
+                throw new RuntimeException("未找到该图书的有效借阅记录");
+            }
         }
 
-        // 3. 检查预约队列
-        var first = reservationService.notifyFirstInQueue(Integer.valueOf(bookNum));
+        // 1. 归还前先查借阅状态
+        int borrowState = getBorrowState(userId, bookNumInt);
+        Integer borrowRecordId = findBorrowRecordId(userId, bookNumInt);
+
+        // 2. 更新数据库
+        bookMapper.updateOne(bookNumInt, "可借阅");
+        borrowMapper.returnBook(bookNumInt, userId);
+        borrowMapper.editApply(bookNumInt, userId);
+
+        // 3. 信用分计算（按时归还加分）
+        if (borrowState == 1 && borrowRecordId != null) {
+            creditService.addOnTimeReturn(userId, borrowRecordId);
+        }
+
+        // 4. 检查预约队列
+        var first = reservationService.notifyFirstInQueue(bookNumInt);
         if (first != null) {
-            bookMapper.updateOne(Integer.valueOf(bookNum), "预约锁定");
+            bookMapper.updateOne(bookNumInt, "预约锁定");
         }
     }
-
     @Override
     public void returnBook(Integer userId, Integer bookNum) {
         returnBook(userId, String.valueOf(bookNum));
